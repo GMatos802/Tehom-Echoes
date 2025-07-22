@@ -1,0 +1,11 @@
+attrs==25.3.0
+cffi==1.17.1
+cryptography==45.0.5
+filelock==3.18.0
+gps==3.26.1
+packaging==25.0
+pycparser==2.22
+PyGObject==3.52.3
+pywal==3.3.0
+Reflector==2023.6.28.0.36.1
+wheel==0.45.1
