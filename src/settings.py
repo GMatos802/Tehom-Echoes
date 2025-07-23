@@ -1,9 +1,10 @@
 # Window configuration
-
 WIDTH = 1280
 HEIGHT = 720
 FPS = 60
 TITLE = "Tehom Echoes"
+INTERNAL_WIDTH = 640
+INTERNAL_HEIGHT = 360
 
 # Colors
 BLACK = (0, 0, 0)
@@ -11,3 +12,13 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+
+# Player dimensions
+PLAYER_WIDTH = 32
+PLAYER_HEIGHT = 48
+PLAYER_SPEED = 5
+
+# Dash configuration
+DASH_SPEED_MULTIPLIER = 4
+DASH_DURATION = 150
+DASH_COOLDOWN = 500
