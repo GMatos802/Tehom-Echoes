@@ -2,11 +2,13 @@
 
 import pygame
 from settings import *
+from powers.kits import LightKit
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, game):
         super().__init__()
+        self.game = game
 
         # --- Gráficos e Posição ---
         self.image = pygame.Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
@@ -22,6 +24,8 @@ class Player(pygame.sprite.Sprite):
         self.last_dash_time = 0
         self.is_dashing = False
         self.dash_end_time = 0
+
+        self.kit = LightKit(self)
 
     def get_input(self):
         keys = pygame.key.get_pressed()
