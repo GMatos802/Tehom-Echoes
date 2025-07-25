@@ -33,6 +33,8 @@ class Player(pygame.sprite.Sprite):
         self.health = PLAYER_MAX_HEALTH
         self.last_hit_time = 0
 
+        self.is_incinvile = False
+
     def get_input(self):
         keys = pygame.key.get_pressed()
 
@@ -64,16 +66,15 @@ class Player(pygame.sprite.Sprite):
             self.last_dash_time = current_time
 
     def take_damage(self, amount):
-        current_time = pygame.time.get_ticks()
-
-        if current_time - self.last_hit_time > PLAYER_INVINCIBILITY_DURATION:
+        if not self.is_incinvile:
             self.health -= amount
-            self.last_hit_time = current_time
-
             if self.health < 0:
                 self.health = 0
 
             print(f"Player health: {self.health}")
+
+            self.is_incinvile = True
+            self.last_hit_time = pygame.time.get_ticks()
 
             if self.health <= 0:
                 self.kill()
@@ -89,9 +90,16 @@ class Player(pygame.sprite.Sprite):
 
         self.health -= HEALTH_DRAIN_RATE
 
-        if self.health <= 0:
-            self.kill()
-            self.game.running = False
+        current_time = pygame.time.get_ticks()
+
+        if self.is_incinvile:
+            if current_time - self.last_hit_time > PLAYER_INVINCIBILITY_DURATION:
+                self.is_incinvile = False
+
+            alpha = 255 if int(current_time / 50) % 2 == 0 else 0
+            self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255)
 
         self.get_input()
 

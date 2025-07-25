@@ -32,18 +32,32 @@ class Abaddon(pygame.sprite.Sprite):
         self.pos = pygame.math.Vector2(self.rect.center)
         self.speed = ABADDON_SPEED
 
+        self.is_hit = False
+        self.hit_time = 0
+
         self.state = 'chasing'
         self.last_attack_time = 0
         self.action_start_time = 0
         self.attack_direction = pygame.math.Vector2()
 
     def take_damage(self, amount):
-        self.health -= amount
-        print(f"Abaddon health: {self.health}")
-        if self.health <= 0:
-            self.kill()
+        if not self.is_hit:
+            self.health -= amount
+            print(f"Abaddon health: {self.health}")
+            if self.health <= 0:
+                self.kill()
+
+            self.is_hit = True
+            self.hit_time = pygame.time.get_ticks()
+            self.image.fill(WHITE)
 
     def update(self):
+        if self.is_hit:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.is_hit > HIT_FLASH_DURATION:
+                self.is_hit = False
+                self.image.fill(RED)
+
         current_time = pygame.time.get_ticks()
         direction_to_player = self.player.pos - self.pos
         distance_to_player = 0
@@ -57,7 +71,7 @@ class Abaddon(pygame.sprite.Sprite):
             if distance_to_player > 5:
                 self.pos += direction_to_player.normalize() * self.speed
                 self.rect.center = self.pos
-            
+
             # TRANSIÇÃO: Checar se pode atacar
             if current_time - self.last_attack_time > ABADDON_ATTACK_COOLDOWN:
                 # Se o jogador está PERTO (zona de combate corpo a corpo)...
@@ -71,7 +85,7 @@ class Abaddon(pygame.sprite.Sprite):
                     self.attack_hitboxes.add(swing_attack)
                     self.action_start_time = current_time
                     self.last_attack_time = current_time
-                
+
                 # Se o jogador está LONGE (zona de gap close / ataque à distância)...
                 elif distance_to_player < ABADDON_CHARGE_RADIUS:
                     # ... ele escolhe entre a investida (para se aproximar) ou a onda (para pressionar).
@@ -80,15 +94,17 @@ class Abaddon(pygame.sprite.Sprite):
 
                     if choice == 'charge':
                         self.state = 'wind_up'
-                    else: # 'shockwave'
-                        new_shockwave = Shockwave(self.pos, self.attack_direction)
+                    else:  # 'shockwave'
+                        new_shockwave = Shockwave(
+                            self.pos, self.attack_direction)
                         self.enemy_projectiles.add(new_shockwave)
-                        self.last_attack_time = current_time # Reseta o cooldown, mas continua perseguindo
+                        # Reseta o cooldown, mas continua perseguindo
+                        self.last_attack_time = current_time
 
                     # Apenas a investida precisa de um timer de ação
                     if self.state == 'wind_up':
-                         self.action_start_time = current_time
-                         self.last_attack_time = current_time
+                        self.action_start_time = current_time
+                        self.last_attack_time = current_time
 
         elif self.state == 'wind_up':
             if current_time - self.action_start_time > ABADDON_WINDUP_DURATION:
@@ -100,7 +116,7 @@ class Abaddon(pygame.sprite.Sprite):
             self.rect.center = self.pos
             if current_time - self.action_start_time > ABADDON_ATTACK_DURATION:
                 self.state = 'chasing'
-        
+
         elif self.state == 'swinging':
             if current_time - self.action_start_time > 500:
                 self.state = 'chasing'
