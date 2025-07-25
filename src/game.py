@@ -20,8 +20,11 @@ class Game:
         self.projectiles = pygame.sprite.Group()
         self.effects = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
+        self.attack_hitboxes = pygame.sprite.Group()
+        self.enemy_projectiles = pygame.sprite.Group()
 
-        abaddon = Abaddon(self.player)
+        abaddon = Abaddon(self.player, self.attack_hitboxes,
+                          self.enemy_projectiles)
         self.enemies.add(abaddon)
 
     def run(self):
@@ -43,6 +46,8 @@ class Game:
             self.projectiles.update()
             self.effects.update()
             self.enemies.update()
+            self.enemy_projectiles.update()
+            self.attack_hitboxes.update()
 
             collisions = pygame.sprite.groupcollide(
                 self.projectiles, self.enemies, True, False)
@@ -60,19 +65,31 @@ class Game:
                         effect.enemies_hit.append(enemy)
                         self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
 
+            enemy_projectile_hits = pygame.sprite.spritecollide(
+                self.player, self.enemy_projectiles, False)
+            if enemy_projectile_hits:
+                self.player.take_damage(15)
+
             player_hit = pygame.sprite.spritecollide(
                 self.player, self.enemies, False)
             if player_hit:
                 self.player.take_damage(10)
 
+            swing_hits = pygame.sprite.spritecollide(
+                self.player, self.attack_hitboxes, False)
+            if swing_hits:
+                self.player.take_damage(25)
+
             # pygame.sprite.groupcollide(self.effects, self.enemy_projectiles, False, True)
 
             self.screen.fill(BLACK)
 
-            self.player.draw(self.screen)
-            self.projectiles.draw(self.screen)
-            self.effects.draw(self.screen)
             self.enemies.draw(self.screen)
+            self.effects.draw(self.screen)
+            self.projectiles.draw(self.screen)
+            self.attack_hitboxes.draw(self.screen)
+            self.enemy_projectiles.draw(self.screen)
+            self.player.draw(self.screen)
             self.hud.draw(self.screen)
 
             # scaled_surface = pygame.transform.scale(
