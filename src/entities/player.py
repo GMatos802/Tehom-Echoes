@@ -13,7 +13,7 @@ class Player(pygame.sprite.Sprite):
         # --- Gráficos e Posição ---
         self.image = pygame.Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
         self.image.fill(WHITE)
-        self.rect = self.image.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.rect = self.image.get_rect(center=(WIDTH // 2, HEIGHT * 0.8))
 
         # --- Movimento ---
         self.pos = pygame.math.Vector2(self.rect.center)
@@ -25,7 +25,13 @@ class Player(pygame.sprite.Sprite):
         self.is_dashing = False
         self.dash_end_time = 0
 
+        # --- Kits ---
         self.kit = LightKit(self)
+
+        # --- health ---
+        self.max_health = PLAYER_MAX_HEALTH
+        self.health = PLAYER_MAX_HEALTH
+        self.last_hit_time = 0
 
     def get_input(self):
         keys = pygame.key.get_pressed()
@@ -57,7 +63,36 @@ class Player(pygame.sprite.Sprite):
             self.dash_end_time = current_time + DASH_DURATION
             self.last_dash_time = current_time
 
+    def take_damage(self, amount):
+        current_time = pygame.time.get_ticks()
+
+        if current_time - self.last_hit_time > PLAYER_INVINCIBILITY_DURATION:
+            self.health -= amount
+            self.last_hit_time = current_time
+
+            if self.health < 0:
+                self.health = 0
+
+            print(f"Player health: {self.health}")
+
+            if self.health <= 0:
+                self.kill()
+                self.game.running = False
+
+    def gain_health(self, amount):
+        self.health += amount
+
+        if self.health > self.max_health:
+            self.health = self.max_health
+
     def update(self):
+
+        self.health -= HEALTH_DRAIN_RATE
+
+        if self.health <= 0:
+            self.kill()
+            self.game.running = False
+
         self.get_input()
 
         if self.direction.length() > 0:

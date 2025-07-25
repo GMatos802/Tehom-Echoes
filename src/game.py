@@ -1,5 +1,6 @@
 import pygame
 from settings import *
+from ui.hud import HUD
 from entities.player import Player
 from entities.bosses.abaddon import Abaddon
 from powers.kits import LightKit
@@ -15,6 +16,7 @@ class Game:
         self.running = True
 
         self.player = Player(self)
+        self.hud = HUD(self.player)
         self.projectiles = pygame.sprite.Group()
         self.effects = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
@@ -47,6 +49,7 @@ class Game:
             for projectile, enemies_hit in collisions.items():
                 for enemy in enemies_hit:
                     enemy.take_damage(1)
+                    self.player.gain_health(HEALTH_REGEN_ON_SPEAR_HIT)
 
             pulse_collisions = pygame.sprite.groupcollide(
                 self.effects, self.enemies, False, False)
@@ -55,11 +58,12 @@ class Game:
                     if enemy not in effect.enemies_hit:
                         enemy.take_damage(PULSE_DAMAGE)
                         effect.enemies_hit.append(enemy)
+                        self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
 
             player_hit = pygame.sprite.spritecollide(
                 self.player, self.enemies, False)
             if player_hit:
-                print("Jogador atingido!")
+                self.player.take_damage(10)
 
             # pygame.sprite.groupcollide(self.effects, self.enemy_projectiles, False, True)
 
@@ -69,6 +73,7 @@ class Game:
             self.projectiles.draw(self.screen)
             self.effects.draw(self.screen)
             self.enemies.draw(self.screen)
+            self.hud.draw(self.screen)
 
             # scaled_surface = pygame.transform.scale(
             # self.game_surface, (WIDTH, HEIGHT))

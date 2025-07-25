@@ -7,7 +7,7 @@ class Abaddon(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.Surface((ABADDON_WIDTH, ABADDON_HEIGHT))
         self.image.fill(RED)
-        self.rect = self.image.get_rect(center=(WIDTH / 2, HEIGHT / 2))
+        self.rect = self.image.get_rect(center=(WIDTH / 2, HEIGHT * 0.2))
         self.health = 50
 
         self.player = player
