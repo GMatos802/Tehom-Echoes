@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 from entities.player import Player
-from entities.dummy_enemy import DummyEnemy
+from entities.bosses.abaddon import Abaddon
 from powers.kits import LightKit
 
 
@@ -19,8 +19,8 @@ class Game:
         self.effects = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
 
-        dummy = DummyEnemy((WIDTH * 0.75, HEIGHT // 2))
-        self.enemies.add(dummy)
+        abaddon = Abaddon(self.player)
+        self.enemies.add(abaddon)
 
     def run(self):
         while self.running:
@@ -40,6 +40,7 @@ class Game:
             self.player.update()
             self.projectiles.update()
             self.effects.update()
+            self.enemies.update()
 
             collisions = pygame.sprite.groupcollide(
                 self.projectiles, self.enemies, True, False)
@@ -54,6 +55,11 @@ class Game:
                     if enemy not in effect.enemies_hit:
                         enemy.take_damage(PULSE_DAMAGE)
                         effect.enemies_hit.append(enemy)
+
+            player_hit = pygame.sprite.spritecollide(
+                self.player, self.enemies, False)
+            if player_hit:
+                print("Jogador atingido!")
 
             # pygame.sprite.groupcollide(self.effects, self.enemy_projectiles, False, True)
 
