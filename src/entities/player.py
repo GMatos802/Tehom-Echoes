@@ -90,6 +90,11 @@ class Player(pygame.sprite.Sprite):
 
         self.health -= HEALTH_DRAIN_RATE
 
+        if self.health <= 0:
+            self.kill()
+            self.game.running = False
+            return
+
         current_time = pygame.time.get_ticks()
 
         if self.is_incinvile:

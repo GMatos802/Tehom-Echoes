@@ -7,7 +7,7 @@ class Shockwave(pygame.sprite.Sprite):
     def __init__(self, start_pos, direction):
         super().__init__()
 
-        self.original_image = pygame.Surface((400, 50), pygame.SRCALPHA)
+        self.original_image = pygame.Surface((400, 30), pygame.SRCALPHA)
         self.original_image.fill((BLUE))
 
         self.rect = self.original_image.get_rect(center=start_pos)
