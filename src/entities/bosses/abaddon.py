@@ -24,8 +24,8 @@ class Abaddon(pygame.sprite.Sprite):
         self.image = pygame.Surface((ABADDON_WIDTH, ABADDON_HEIGHT))
         self.image.fill(RED)
         self.rect = self.image.get_rect(center=(WIDTH / 2, HEIGHT * 0.2))
-        self.health = 50
-        self.max_health = 50
+        self.health = 100
+        self.max_health = 100
 
         self.player = player
         self.attack_hitboxes = attack_hitbox_group
@@ -67,9 +67,9 @@ class Abaddon(pygame.sprite.Sprite):
             if current_time - self.hit_time > HIT_FLASH_DURATION:
                 self.is_hit = False
                 if self.in_phase_2:
-                    self.image.fill((150, 0, 0)) # Vermelho escuro da Fase 2
+                    self.image.fill((150, 0, 0))  # Vermelho escuro da Fase 2
                 else:
-                    self.image.fill(RED) # Vermelho normal da Fase 1
+                    self.image.fill(RED)  # Vermelho normal da Fase 1
 
         current_time = pygame.time.get_ticks()
 
@@ -101,9 +101,10 @@ class Abaddon(pygame.sprite.Sprite):
                     self.state = 'swinging'
                     if self.in_phase_2:
                         # Adiciona a Onda de Ruína ao golpe
-                        new_shockwave = Shockwave(self.pos, self.attack_direction)
+                        new_shockwave = Shockwave(
+                            self.pos, self.attack_direction)
                         self.enemy_projectiles.add(new_shockwave)
-                    
+
                     hitbox_pos = self.pos + self.attack_direction * 75
                     hitbox_size = (SWING_HITBOX_WIDTH, SWING_HITBOX_HEIGHT)
                     swing_attack = HitboxSprite(hitbox_pos, hitbox_size, 500)
@@ -119,7 +120,8 @@ class Abaddon(pygame.sprite.Sprite):
                     if choice == 'charge':
                         self.state = 'wind_up'
                     else:  # 'shockwave'
-                        new_shockwave = Shockwave(self.pos, self.attack_direction)
+                        new_shockwave = Shockwave(
+                            self.pos, self.attack_direction)
                         self.enemy_projectiles.add(new_shockwave)
                         self.last_attack_time = current_time
 
@@ -140,10 +142,12 @@ class Abaddon(pygame.sprite.Sprite):
                 if current_time - self.last_charge_shot_time > CHARGE_SHOT_COOLDOWN:
                     left_direction = self.attack_direction.rotate(90)
                     right_direction = self.attack_direction.rotate(-90)
-                    self.enemy_projectiles.add(Shockwave(self.pos, left_direction))
-                    self.enemy_projectiles.add(Shockwave(self.pos, right_direction))
+                    self.enemy_projectiles.add(
+                        Shockwave(self.pos, left_direction))
+                    self.enemy_projectiles.add(
+                        Shockwave(self.pos, right_direction))
                     self.last_charge_shot_time = current_time
-            
+
             if current_time - self.action_start_time > ABADDON_ATTACK_DURATION:
                 self.state = 'chasing'
 

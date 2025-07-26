@@ -55,6 +55,7 @@ class Game:
                 for enemy in enemies_hit:
                     enemy.take_damage(1)
                     self.player.gain_health(HEALTH_REGEN_ON_SPEAR_HIT)
+                    self.player.kit.on_spear_hit()
 
             pulse_collisions = pygame.sprite.groupcollide(
                 self.effects, self.enemies, False, False)

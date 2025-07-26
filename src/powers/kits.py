@@ -8,11 +8,11 @@ class LightKit:
         self.player = player
         self.last_spear_time = 0
         self.last_pulse_time = 0
+        self.current_spear_cooldown = HOLY_SPEAR_BASE_COOLDOWN
 
     def activate_skill_1(self, projectile_group):
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_spear_time > HOLY_SPEAR_COOLDOWN:
-
+        if current_time - self.last_spear_time > self.current_spear_cooldown:
             mouse_pos = pygame.mouse.get_pos()
             start_pos = self.player.pos
             direction = pygame.math.Vector2(
@@ -23,6 +23,12 @@ class LightKit:
                 projectile_group.add(new_spear)
 
             self.last_spear_time = current_time
+
+    def on_spear_hit(self):
+        self.current_spear_cooldown -= HOLY_SPEAR_COOLDOWN_REDUCTION
+        if self.current_spear_cooldown < HOLY_SPEAR_MIN_COOLDOWN:
+            self.current_spear_cooldown = HOLY_SPEAR_MIN_COOLDOWN
+        print(f"Novo cooldown da Lança: {self.current_spear_cooldown}ms")
 
     def activate_skill_2(self, effect_group):
         current_time = pygame.time.get_ticks()
