@@ -80,6 +80,9 @@ class Game:
             if swing_hits:
                 self.player.take_damage(25)
 
+            pygame.sprite.groupcollide(
+                self.effects, self.enemy_projectiles, False, True)
+
             # pygame.sprite.groupcollide(self.effects, self.enemy_projectiles, False, True)
 
             self.screen.fill(BLACK)
