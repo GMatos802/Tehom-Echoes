@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 import random
-from entities.enemy_projectiles import Shockwave
+from entities.enemy_projectiles import Shockwave, HomingSwarm
 
 
 class HitboxSprite(pygame.sprite.Sprite):
@@ -25,6 +25,7 @@ class Abaddon(pygame.sprite.Sprite):
         self.image.fill(RED)
         self.rect = self.image.get_rect(center=(WIDTH / 2, HEIGHT * 0.2))
         self.health = 50
+        self.max_health = 50
 
         self.player = player
         self.attack_hitboxes = attack_hitbox_group
@@ -34,16 +35,24 @@ class Abaddon(pygame.sprite.Sprite):
 
         self.is_hit = False
         self.hit_time = 0
+        self.in_phase_2 = False
 
         self.state = 'chasing'
         self.last_attack_time = 0
         self.action_start_time = 0
         self.attack_direction = pygame.math.Vector2()
+        self.last_swarm_time = 0
+        self.last_charge_shot_time = 0
 
     def take_damage(self, amount):
         if not self.is_hit:
             self.health -= amount
             print(f"Abaddon health: {self.health}")
+
+            if self.health <= (self.max_health / 2) and not self.in_phase_2:
+                self.in_phase_2 = True
+                print("ABADDON ENTROU NA FASE 2!")
+
             if self.health <= 0:
                 self.kill()
 
@@ -52,13 +61,24 @@ class Abaddon(pygame.sprite.Sprite):
             self.image.fill(WHITE)
 
     def update(self):
+        # Gerenciador de Cor e Flash
         if self.is_hit:
             current_time = pygame.time.get_ticks()
-            if current_time - self.is_hit > HIT_FLASH_DURATION:
+            if current_time - self.hit_time > HIT_FLASH_DURATION:
                 self.is_hit = False
-                self.image.fill(RED)
+                if self.in_phase_2:
+                    self.image.fill((150, 0, 0)) # Vermelho escuro da Fase 2
+                else:
+                    self.image.fill(RED) # Vermelho normal da Fase 1
 
         current_time = pygame.time.get_ticks()
+
+        if self.in_phase_2 and current_time - self.last_swarm_time > SWARM_COOLDOWN:
+            for i in range(3):
+                new_swarm_projectile = HomingSwarm(self.pos, self.player)
+                self.enemy_projectiles.add(new_swarm_projectile)
+            self.last_swarm_time = current_time
+
         direction_to_player = self.player.pos - self.pos
         distance_to_player = 0
         if direction_to_player.length() > 0:
@@ -76,9 +96,14 @@ class Abaddon(pygame.sprite.Sprite):
             if current_time - self.last_attack_time > ABADDON_ATTACK_COOLDOWN:
                 # Se o jogador está PERTO (zona de combate corpo a corpo)...
                 if distance_to_player < ABADDON_ATTACK_RADIUS:
-                    # ... a prioridade é o ataque em arco.
                     self.attack_direction = direction_to_player.normalize()
+                    # Aprimoramento da Fase 2: Sempre usa o golpe em arco de perto
                     self.state = 'swinging'
+                    if self.in_phase_2:
+                        # Adiciona a Onda de Ruína ao golpe
+                        new_shockwave = Shockwave(self.pos, self.attack_direction)
+                        self.enemy_projectiles.add(new_shockwave)
+                    
                     hitbox_pos = self.pos + self.attack_direction * 75
                     hitbox_size = (SWING_HITBOX_WIDTH, SWING_HITBOX_HEIGHT)
                     swing_attack = HitboxSprite(hitbox_pos, hitbox_size, 500)
@@ -88,20 +113,16 @@ class Abaddon(pygame.sprite.Sprite):
 
                 # Se o jogador está LONGE (zona de gap close / ataque à distância)...
                 elif distance_to_player < ABADDON_CHARGE_RADIUS:
-                    # ... ele escolhe entre a investida (para se aproximar) ou a onda (para pressionar).
                     self.attack_direction = direction_to_player.normalize()
                     choice = random.choice(['charge', 'shockwave'])
 
                     if choice == 'charge':
                         self.state = 'wind_up'
                     else:  # 'shockwave'
-                        new_shockwave = Shockwave(
-                            self.pos, self.attack_direction)
+                        new_shockwave = Shockwave(self.pos, self.attack_direction)
                         self.enemy_projectiles.add(new_shockwave)
-                        # Reseta o cooldown, mas continua perseguindo
                         self.last_attack_time = current_time
 
-                    # Apenas a investida precisa de um timer de ação
                     if self.state == 'wind_up':
                         self.action_start_time = current_time
                         self.last_attack_time = current_time
@@ -114,6 +135,15 @@ class Abaddon(pygame.sprite.Sprite):
         elif self.state == 'attacking':
             self.pos += self.attack_direction * (self.speed * 8)
             self.rect.center = self.pos
+            # Aprimoramento da Fase 2
+            if self.in_phase_2:
+                if current_time - self.last_charge_shot_time > CHARGE_SHOT_COOLDOWN:
+                    left_direction = self.attack_direction.rotate(90)
+                    right_direction = self.attack_direction.rotate(-90)
+                    self.enemy_projectiles.add(Shockwave(self.pos, left_direction))
+                    self.enemy_projectiles.add(Shockwave(self.pos, right_direction))
+                    self.last_charge_shot_time = current_time
+            
             if current_time - self.action_start_time > ABADDON_ATTACK_DURATION:
                 self.state = 'chasing'
 

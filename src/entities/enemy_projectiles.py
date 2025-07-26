@@ -28,3 +28,35 @@ class Shockwave(pygame.sprite.Sprite):
 
         if not pygame.Rect(0, 0, WIDTH, HEIGHT).colliderect(self.rect):
             self.kill()
+
+
+class HomingSwarm(pygame.sprite.Sprite):
+    def __init__(self, start_pos, player):
+        super().__init__()
+
+        self.player = player
+        self.image = pygame.Surface((12, 12))
+        self.image.fill((255, 255, 0))
+        self.rect = self.image.get_rect(center=start_pos)
+
+        self.pos = pygame.math.Vector2(self.rect.center)
+        self.speed = 6
+
+        self.spawn_time = pygame.time.get_ticks()
+
+    def update(self):
+        current_time = pygame.time.get_ticks()
+
+        if current_time - self.spawn_time > SWARM_LIFETIME:
+            self.kill()
+            return
+
+        direction = self.player.pos - self.pos
+
+        if direction.length() > 0:
+            self.pos += direction.normalize() * self.speed
+
+        self.rect.center = self.pos
+
+        if not pygame.Rect(0, 0, WIDTH, HEIGHT).colliderect(self.rect):
+            self.kill()
