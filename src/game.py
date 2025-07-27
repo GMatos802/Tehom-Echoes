@@ -4,7 +4,8 @@ from ui.hud import HUD
 from entities.player import Player
 from entities.bosses.abaddon import Abaddon
 from powers.kits import LightKit, FuryKit
-
+from powers.skills.light_skills import HolySpear
+from powers.skills.fury_skills import Slash, RushHitbox
 
 class Game:
     def __init__(self):
@@ -13,8 +14,20 @@ class Game:
         pygame.display.set_caption(TITLE)
         self.clock = pygame.time.Clock()
         self.running = True
+        self.state = 'START_SCREEN'
+        self.font = pygame.font.Font(None, 48)
 
-        self.player = Player(self)
+        self.player = None
+        self.hud = None
+        self.projectiles = None
+        self.effects = None
+        self.enemies = None
+        self.attack_hitboxes = None
+        self.player_attack_hitboxes = None
+        self.enemy_projectiles = None
+
+    def start_new_game(self, kit_class):
+        self.player = Player(self, kit_class)
         self.hud = HUD(self.player)
         self.projectiles = pygame.sprite.Group()
         self.effects = pygame.sprite.Group()
@@ -28,82 +41,124 @@ class Game:
 
     def run(self):
         while self.running:
-            self.clock.tick(FPS)
+            if self.state == 'START_SCREEN':
+                self.run_start_screen()
+            elif self.state == 'PLAYING':
+                self.run_gameplay()
+        
+        pygame.quit()
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
+    def run_start_screen(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        if hasattr(self.player.kit, 'activate_skill_1'):
-                            self.player.kit.activate_skill_1(self.player_attack_hitboxes)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    self.start_new_game(LightKit)
+                    self.state = 'PLAYING' 
+                if event.key == pygame.K_2:
+                    self.start_new_game(FuryKit)
+                    self.state = 'PLAYING' 
 
-                    if event.button == 3:
-                        if hasattr(self.player.kit, 'activate_skill_2'):
-                            if isinstance(self.player.kit, FuryKit):
-                                self.player.kit.activate_skill_2(self.player_attack_hitboxes)
-                            elif isinstance(self.player.kit, LightKit):
-                                self.player.kit.activate_skill_2(self.effects)
+        self.screen.fill(BLACK)
 
-            self.player.update()
-            self.projectiles.update()
-            self.effects.update()
-            self.enemies.update()
-            self.enemy_projectiles.update()
-            self.attack_hitboxes.update()
-            self.player_attack_hitboxes.update()
+        title_surface = self.font.render("Escolha seu Kit Inicial", True, WHITE)
+        title_rect = title_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.3))
 
-            player_attacks_hit = pygame.sprite.groupcollide(
-                self.player_attack_hitboxes, self.enemies, False, False)
-            for hitbox, enemies_hit in player_attacks_hit.items():
-                for enemy in enemies_hit:
-                    if enemy not in hitbox.enemies_hit:
-                        enemy.take_damage(SLASH_DAMAGE) 
+        option1_surface = self.font.render("Pressione [1] para LUZ", True, YELLOW)
+        option1_rect = option1_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.5))
+
+        option2_surface = self.font.render("Pressione [2] para FURIA", True, RED)
+        option2_rect = option2_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.6))
+
+        self.screen.blit(title_surface, title_rect)
+        self.screen.blit(option1_surface, option1_rect)
+        self.screen.blit(option2_surface, option2_rect)
+
+        pygame.display.flip()
+
+    def run_gameplay(self):
+        self.clock.tick(FPS)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if hasattr(self.player.kit, 'activate_skill_1'):
+                        self.player.kit.activate_skill_1(self.player_attack_hitboxes)
+                if event.button == 3:
+                    if hasattr(self.player.kit, 'activate_skill_2'):
+                        if isinstance(self.player.kit, FuryKit):
+                            self.player.kit.activate_skill_2(self.player_attack_hitboxes)
+                        elif isinstance(self.player.kit, LightKit):
+                            self.player.kit.activate_skill_2(self.effects)
+        
+        self.player.update()
+        self.projectiles.update()
+        self.effects.update()
+        self.enemies.update()
+        self.enemy_projectiles.update()
+        self.attack_hitboxes.update()
+        self.player_attack_hitboxes.update()
+
+        player_attacks_hit = pygame.sprite.groupcollide(
+            self.player_attack_hitboxes, self.enemies, False, False)
+        for hitbox, enemies_hit in player_attacks_hit.items():
+            for enemy in enemies_hit:
+                if enemy not in hitbox.enemies_hit:
+                    if isinstance(hitbox, (Slash, RushHitbox)):
+                        enemy.take_damage(SLASH_DAMAGE)
                         if hasattr(self.player.kit, 'on_slash_hit'):
                             self.player.kit.on_slash_hit()
-                        self.player.gain_health(2 )
+                        self.player.gain_health(HEALTH_REGEN_ON_SLASH_HIT)
+                    
+                    elif isinstance(hitbox, HolySpear):
+                        enemy.take_damage(1)
+                        if hasattr(self.player.kit, 'on_spear_hit'):
+                            self.player.kit.on_spear_hit()
+                        self.player.gain_health(HEALTH_REGEN_ON_SPEAR_HIT)
 
-                        hitbox.enemies_hit.append(enemy)
+                    hitbox.enemies_hit.append(enemy)
 
-            pulse_collisions = pygame.sprite.groupcollide(
-                self.effects, self.enemies, False, False)
-            for effect, enemies_hit in pulse_collisions.items():
-                for enemy in enemies_hit:
-                    if enemy not in effect.enemies_hit:
-                        enemy.take_damage(PULSE_DAMAGE)
-                        effect.enemies_hit.append(enemy)
-                        self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
+        pulse_collisions = pygame.sprite.groupcollide(
+            self.effects, self.enemies, False, False)
+        for effect, enemies_hit in pulse_collisions.items():
+            for enemy in enemies_hit:
+                if enemy not in effect.enemies_hit:
+                    enemy.take_damage(PULSE_DAMAGE)
+                    effect.enemies_hit.append(enemy)
+                    self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
 
-            enemy_projectile_hits = pygame.sprite.spritecollide(
-                self.player, self.enemy_projectiles, True)
-            if enemy_projectile_hits:
-                self.player.take_damage(15)
+        enemy_projectile_hits = pygame.sprite.spritecollide(
+            self.player, self.enemy_projectiles, True)
+        if enemy_projectile_hits:
+            self.player.take_damage(15)
 
-            player_hit_by_touch = pygame.sprite.spritecollide(
-                self.player, self.enemies, False)
-            if player_hit_by_touch:
-                self.player.take_damage(10)
+        player_hit_by_touch = pygame.sprite.spritecollide(
+            self.player, self.enemies, False)
+        if player_hit_by_touch:
+            self.player.take_damage(10)
 
-            player_hit_by_swing = pygame.sprite.spritecollide(
-                self.player, self.attack_hitboxes, False)
-            if player_hit_by_swing:
-                self.player.take_damage(25)
+        player_hit_by_swing = pygame.sprite.spritecollide(
+            self.player, self.attack_hitboxes, False)
+        if player_hit_by_swing:
+            self.player.take_damage(25)
 
-            pygame.sprite.groupcollide(
-                self.effects, self.enemy_projectiles, False, True)
+        pygame.sprite.groupcollide(
+            self.effects, self.enemy_projectiles, False, True)
 
-            self.screen.fill(BLACK)
+        self.screen.fill(BLACK)
 
-            self.enemies.draw(self.screen)
-            self.effects.draw(self.screen)
-            self.projectiles.draw(self.screen)
-            self.attack_hitboxes.draw(self.screen)
-            self.enemy_projectiles.draw(self.screen)
-            self.player.draw(self.screen)
-            self.hud.draw(self.screen)
-            self.player_attack_hitboxes.draw(self.screen)
+        self.enemies.draw(self.screen)
+        self.effects.draw(self.screen)
+        self.projectiles.draw(self.screen)
+        self.attack_hitboxes.draw(self.screen)
+        self.enemy_projectiles.draw(self.screen)
+        self.player.draw(self.screen)
+        self.hud.draw(self.screen)
+        self.player_attack_hitboxes.draw(self.screen)
 
-            pygame.display.flip()
-
-        pygame.quit()
+        pygame.display.flip()

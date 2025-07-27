@@ -8,6 +8,8 @@ class HolySpear(BaseSkill):
     def __init__(self, start_pos, direction):
         super().__init__()
 
+        self.enemies_hit = []
+
         self.original_image = pygame.Surface((60, 20), pygame.SRCALPHA)
         self.original_image.fill(YELLOW)
 

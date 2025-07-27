@@ -3,7 +3,7 @@ from settings import *
 from powers.kits import LightKit, FuryKit
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, game):
+    def __init__(self, game, kit_class):
         super().__init__()
         self.game = game
 
@@ -20,7 +20,7 @@ class Player(pygame.sprite.Sprite):
         self.last_dash_time = 0
         self.dash_direction = pygame.math.Vector2()
 
-        self.kit = FuryKit(self)
+        self.kit = kit_class(self)
 
         self.max_health = PLAYER_MAX_HEALTH
         self.health = PLAYER_MAX_HEALTH

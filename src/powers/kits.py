@@ -11,7 +11,7 @@ class LightKit:
         self.last_pulse_time = 0
         self.current_spear_cooldown = HOLY_SPEAR_BASE_COOLDOWN
 
-    def activate_skill_1(self, projectile_group):
+    def activate_skill_1(self, player_attack_group):
         current_time = pygame.time.get_ticks()
         if current_time - self.last_spear_time > self.current_spear_cooldown:
             mouse_pos = pygame.mouse.get_pos()
@@ -21,7 +21,7 @@ class LightKit:
 
             if direction.length() > 0:
                 new_spear = HolySpear(start_pos, direction)
-                projectile_group.add(new_spear)
+                player_attack_group.add(new_spear)
 
             self.last_spear_time = current_time
 
@@ -86,11 +86,6 @@ class FuryKit:
         current_time = pygame.time.get_ticks()
         if self.combo_step > 0 and current_time - self.last_slash_time > COMBO_WINDOW:
             self.combo_step = 0
-
-        if self.is_rushing and current_time > self.rush_end_time:
-            if self.rush_hitbox:
-                self.rush_hitbox.kill()
-                self.rush_hitbox = None
 
     def activate_skill_2(self, player_attack_group):
         current_time = pygame.time.get_ticks()
