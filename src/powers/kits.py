@@ -1,5 +1,6 @@
 from powers.skills.light_skills import HolySpear, LuminousPulse
 from powers.skills.fury_skills import Slash, UnstoppableRush, RushHitbox
+from powers.skills.soul_skills import SpectralScythe, SoulBurst, SoulShard
 import pygame
 from settings import *
 
@@ -109,3 +110,81 @@ class FuryKit:
         if self.current_rush_cooldown < 0:
             self.current_rush_cooldown = 0
         print(f"Novo cooldown do rush: {self.current_rush_cooldown}ms")
+
+class SoulKit:
+    def __init__(self, player):
+        self.player = player
+        self.last_scythe_time = -SCYTHE_COOLDOWN
+
+        self.is_charging = False
+        self.charge_start_time = 0
+        self.current_charge_time = SOUL_BURST_INITIAL_CHARGE_TIME
+        self.last_burst_time = -SOUL_BURST_COOLDOWN
+
+        self.scythe_stacks = 0
+        self.last_scythe_hit_time = 0
+        self.last_shard_time = 0
+
+    def update(self):
+        current_time = pygame.time.get_ticks()
+
+        if self.scythe_stacks > 0 and current_time - self.last_scythe_hit_time > SCYTHE_STACK_DURATION:
+            self.scythe_stacks = 0
+            print("Stacks da Foice resetados!")
+
+        if self.is_charging:
+            current_shard_cooldown = SOUL_SHARD_BASE_COOLDOWN - (self.scythe_stacks * SOUL_SHARD_REDUCTION_PER_STACK)
+            
+            if current_time - self.last_shard_time > current_shard_cooldown:
+                self.last_shard_time = current_time
+                if self.player.game.enemies:
+                    target = self.player.game.enemies.sprites()[0]
+                    new_shard = SoulShard(self.player.pos, target)
+                    self.player.game.player_attack_hitboxes.add(new_shard)
+
+    def start_charge(self):
+        if not self.is_charging:
+            self.is_charging = True
+            self.charge_start_time = pygame.time.get_ticks()
+            print("Começou a carregar!") 
+
+    def release_charge(self, player_attack_group):
+        current_time = pygame.time.get_ticks()
+        if self.is_charging and current_time - self.last_burst_time > SOUL_BURST_COOLDOWN:
+            self.is_charging = False
+            self.last_burst_time = current_time
+            
+            charge_duration = current_time - self.charge_start_time
+            
+            power_ratio = min(charge_duration, self.current_charge_time) / self.current_charge_time
+            damage = SOUL_BURST_MIN_DAMAGE + (SOUL_BURST_MAX_DAMAGE - SOUL_BURST_MIN_DAMAGE) * power_ratio
+            
+            burst_pos = pygame.mouse.get_pos()
+            new_burst = SoulBurst(burst_pos, SOUL_BURST_RADIUS, damage, 300)
+            player_attack_group.add(new_burst)
+
+    def on_scythe_hit(self):
+        """Chamado quando a Foice acerta um inimigo."""
+        if self.scythe_stacks < MAX_SCYTHE_STACKS:
+            self.scythe_stacks += 1
+
+        self.current_charge_time -= SCYTHE_CHARGE_REDUCTION
+        if self.current_charge_time < SOUL_BURST_MIN_CHARGE_TIME:
+            self.current_charge_time = SOUL_BURST_MIN_CHARGE_TIME
+            
+        self.last_scythe_hit_time = pygame.time.get_ticks()
+        print(f"Stacks da Foice: {self.scythe_stacks} | Novo tempo de carga: {self.current_charge_time}ms")
+
+    def activate_skill_2(self, player_attack_group):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_scythe_time > SCYTHE_COOLDOWN:
+            self.last_scythe_time = current_time
+
+            mouse_pos = pygame.mouse.get_pos()
+            player_pos = self.player.pos
+            direction = (pygame.math.Vector2(mouse_pos) - player_pos).normalize()
+
+            scythe_pos = player_pos + direction * 60
+
+            new_scythe = SpectralScythe(scythe_pos, SCYTHE_HITBOX_SIZE, SCYTHE_DURATION, direction)
+            player_attack_group.add(new_scythe)

@@ -9,7 +9,7 @@ class Slash(BaseSkill):
         super().__init__()
         
         self.original_image = pygame.Surface(size, pygame.SRCALPHA)
-        self.original_image.fill((155, 0, 0, 150)) # Branco semi-transparente
+        self.original_image.fill((155, 0, 0, 150)) 
 
         self.rect = self.original_image.get_rect(center=pos)
 

@@ -1,6 +1,6 @@
 import pygame
 from settings import *
-from powers.kits import LightKit, FuryKit
+from powers.kits import LightKit, FuryKit, SoulKit 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, kit_class):
@@ -126,3 +126,18 @@ class Player(pygame.sprite.Sprite):
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+
+        if isinstance(self.kit, SoulKit) and self.kit.is_charging:
+            charge_duration = pygame.time.get_ticks() - self.kit.charge_start_time
+            charge_ratio = min(charge_duration, self.kit.current_charge_time) / self.kit.current_charge_time
+
+            bar_pos_x = self.rect.centerx - CHARGE_BAR_WIDTH / 2
+            bar_pos_y = self.rect.top - 15
+
+            fill_width = CHARGE_BAR_WIDTH * charge_ratio
+
+            background_rect = pygame.Rect(bar_pos_x, bar_pos_y, CHARGE_BAR_WIDTH, CHARGE_BAR_HEIGHT)
+            fill_rect = pygame.Rect(bar_pos_x, bar_pos_y, fill_width, CHARGE_BAR_HEIGHT)
+
+            pygame.draw.rect(surface, (50, 50, 50), background_rect) 
+            pygame.draw.rect(surface, CHARGE_BAR_COLOR, fill_rect)

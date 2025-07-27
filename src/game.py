@@ -3,9 +3,10 @@ from settings import *
 from ui.hud import HUD
 from entities.player import Player
 from entities.bosses.abaddon import Abaddon
-from powers.kits import LightKit, FuryKit
-from powers.skills.light_skills import HolySpear
+from powers.kits import LightKit, FuryKit, SoulKit
+from powers.skills.light_skills import HolySpear, LuminousPulse
 from powers.skills.fury_skills import Slash, RushHitbox
+from powers.skills.soul_skills import SpectralScythe, SoulBurst, SoulShard
 
 class Game:
     def __init__(self):
@@ -60,6 +61,9 @@ class Game:
                 if event.key == pygame.K_2:
                     self.start_new_game(FuryKit)
                     self.state = 'PLAYING' 
+                if event.key == pygame.K_3:
+                    self.start_new_game(SoulKit)
+                    self.state = 'PLAYING'
 
         self.screen.fill(BLACK)
 
@@ -72,9 +76,13 @@ class Game:
         option2_surface = self.font.render("Pressione [2] para FURIA", True, RED)
         option2_rect = option2_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.6))
 
+        option3_surface = self.font.render("Pressione [3] para ALMA", True, BLUE)
+        option3_rect = option3_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.7))
+
         self.screen.blit(title_surface, title_rect)
         self.screen.blit(option1_surface, option1_rect)
         self.screen.blit(option2_surface, option2_rect)
+        self.screen.blit(option3_surface, option3_rect)
 
         pygame.display.flip()
 
@@ -87,14 +95,21 @@ class Game:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    if hasattr(self.player.kit, 'activate_skill_1'):
+                    if isinstance(self.player.kit, SoulKit):
+                        self.player.kit.start_charge()
+                    elif hasattr(self.player.kit, 'activate_skill_1'):
                         self.player.kit.activate_skill_1(self.player_attack_hitboxes)
                 if event.button == 3:
                     if hasattr(self.player.kit, 'activate_skill_2'):
-                        if isinstance(self.player.kit, FuryKit):
-                            self.player.kit.activate_skill_2(self.player_attack_hitboxes)
-                        elif isinstance(self.player.kit, LightKit):
+                        if isinstance(self.player.kit, (LightKit, SoulKit)):
                             self.player.kit.activate_skill_2(self.effects)
+                        elif isinstance(self.player.kit, FuryKit):
+                            self.player.kit.activate_skill_2(self.player_attack_hitboxes)
+
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: 
+                    if isinstance(self.player.kit, SoulKit):
+                        self.player.kit.release_charge(self.player_attack_hitboxes)
         
         self.player.update()
         self.projectiles.update()
@@ -114,23 +129,38 @@ class Game:
                         if hasattr(self.player.kit, 'on_slash_hit'):
                             self.player.kit.on_slash_hit()
                         self.player.gain_health(HEALTH_REGEN_ON_SLASH_HIT)
-                    
                     elif isinstance(hitbox, HolySpear):
                         enemy.take_damage(1)
                         if hasattr(self.player.kit, 'on_spear_hit'):
                             self.player.kit.on_spear_hit()
                         self.player.gain_health(HEALTH_REGEN_ON_SPEAR_HIT)
+                    elif isinstance(hitbox, SoulBurst):
+                        enemy.take_damage(hitbox.damage)
+                        healing_amount = hitbox.damage * SOUL_BURST_LIFESTEAL_RATIO
+                        self.player.gain_health(healing_amount)
 
+                    elif isinstance(hitbox, SoulShard):
+                        enemy.take_damage(SOUL_SHARD_DAMAGE)
+                        self.player.gain_health(HEALTH_REGEN_ON_SHARD_HIT)
+                        hitbox.kill()
+                    
                     hitbox.enemies_hit.append(enemy)
 
-        pulse_collisions = pygame.sprite.groupcollide(
+        effects_hit = pygame.sprite.groupcollide(
             self.effects, self.enemies, False, False)
-        for effect, enemies_hit in pulse_collisions.items():
+        for effect, enemies_hit in effects_hit.items():
             for enemy in enemies_hit:
                 if enemy not in effect.enemies_hit:
-                    enemy.take_damage(PULSE_DAMAGE)
+                    if isinstance(effect, LuminousPulse):
+                        enemy.take_damage(PULSE_DAMAGE)
+                        self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
+                    elif isinstance(effect, SpectralScythe):
+                        enemy.take_damage(SCYTHE_DAMAGE)
+                        if hasattr(self.player.kit, 'on_scythe_hit'):
+                            self.player.kit.on_scythe_hit()
+                        self.player.gain_health(HEALTH_REGEN_ON_SOUL_HIT)
+                    
                     effect.enemies_hit.append(enemy)
-                    self.player.gain_health(HEALTH_REGEN_ON_PULSE_HIT)
 
         enemy_projectile_hits = pygame.sprite.spritecollide(
             self.player, self.enemy_projectiles, True)
