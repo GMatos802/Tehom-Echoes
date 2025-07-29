@@ -28,6 +28,11 @@ class Game:
             Button(WIDTH/2 - 150, button_y_start + 210, 300, 50, "Sair", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR)
         ]
         
+        self.end_screen_button = Button(
+        WIDTH/2 - 150, HEIGHT * 0.6, 300, 50, 
+        "Voltar ao Menu", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR
+    )
+
         self.player = None
         self.hud = None
         self.projectiles = None
@@ -63,6 +68,10 @@ class Game:
                 self.run_bosses_screen()
             elif self.state == 'PLAYING':
                 self.run_gameplay()
+            elif self.state == 'GAME_OVER':
+                self.run_game_over_screen()
+            elif self.state == 'VICTORY':
+                self.run_victory_screen() 
         pygame.quit()
 
     def run_main_menu(self):
@@ -172,6 +181,46 @@ class Game:
         
         pygame.display.flip()
 
+    def run_game_over_screen(self):
+        self.screen.fill(BLACK)
+        mouse_pos = pygame.mouse.get_pos()
+
+        title_surface = self.font.render("VOCE MORREU", True, RED)
+        title_rect = title_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.4))
+        self.screen.blit(title_surface, title_rect)
+
+        self.end_screen_button.check_for_hover(mouse_pos)
+        self.end_screen_button.draw(self.screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            
+            if self.end_screen_button.is_clicked(event):
+                self.state = 'MAIN_MENU' 
+        
+        pygame.display.flip()
+
+    def run_victory_screen(self):
+        self.screen.fill(BLACK)
+        mouse_pos = pygame.mouse.get_pos()
+
+        title_surface = self.font.render("VITORIA", True, YELLOW)
+        title_rect = title_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.4))
+        self.screen.blit(title_surface, title_rect)
+
+        self.end_screen_button.check_for_hover(mouse_pos)
+        self.end_screen_button.draw(self.screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            
+            if self.end_screen_button.is_clicked(event):
+                self.state = 'MAIN_MENU' 
+        
+        pygame.display.flip()
+
     def run_gameplay(self):
         self.clock.tick(FPS)
 
@@ -204,6 +253,10 @@ class Game:
         self.enemy_projectiles.update()
         self.attack_hitboxes.update()
         self.player_attack_hitboxes.update()
+
+        if not self.enemies:
+            self.state = 'VICTORY'
+            return 
 
         player_attacks_hit = pygame.sprite.groupcollide(
             self.player_attack_hitboxes, self.enemies, False, False)

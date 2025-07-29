@@ -70,7 +70,8 @@ class Player(pygame.sprite.Sprite):
 
             if self.health <= 0:
                 self.kill()
-                self.game.running = False
+                self.game.state = 'GAME_OVER'
+                return 
 
     def gain_health(self, amount):
         self.health += amount
@@ -83,7 +84,7 @@ class Player(pygame.sprite.Sprite):
         self.health -= HEALTH_DRAIN_RATE
         if self.health <= 0:
             self.kill()
-            self.game.running = False
+            self.game.state = 'GAME_OVER'
             return 
         
         is_rushing = hasattr(self.kit, 'is_rushing') and self.kit.is_rushing
