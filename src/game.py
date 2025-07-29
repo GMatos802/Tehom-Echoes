@@ -7,7 +7,7 @@ from entities.bosses.abaddon import Abaddon
 from powers.kits import LightKit, FuryKit, SoulKit
 from powers.skills.light_skills import HolySpear, LuminousPulse
 from powers.skills.fury_skills import Slash, RushHitbox
-from powers.skills.soul_skills import SpectralScythe, SoulBurst
+from powers.skills.soul_skills import SpectralScythe, SoulBurst, SoulShard
 
 class Game:
     def __init__(self):
@@ -39,15 +39,17 @@ class Game:
 
     def start_new_game(self, kit_class):
         self.player = Player(self, kit_class)
-        self.hud = HUD(self.player)
         self.projectiles = pygame.sprite.Group()
         self.effects = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
         self.attack_hitboxes = pygame.sprite.Group()
         self.player_attack_hitboxes = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
+
         abaddon = Abaddon(self.player, self.attack_hitboxes, self.enemy_projectiles)
         self.enemies.add(abaddon)
+
+        self.hud = HUD(self.player, self.enemies)
 
     def run(self):
         while self.running:
@@ -227,6 +229,10 @@ class Game:
                         enemy.take_damage(hitbox.damage)
                         healing_amount = hitbox.damage * SOUL_BURST_LIFESTEAL_RATIO
                         self.player.gain_health(healing_amount)
+                    elif isinstance(hitbox, SoulShard):
+                        enemy.take_damage(SOUL_SHARD_DAMAGE)
+                        self.player.gain_health(HEALTH_REGEN_ON_SHARD_HIT)
+                        hitbox.kill()
                     
                     hitbox.enemies_hit.append(enemy)
 
