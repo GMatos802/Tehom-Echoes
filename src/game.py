@@ -1,12 +1,13 @@
 import pygame
 from settings import *
 from ui.hud import HUD
+from ui.button import Button
 from entities.player import Player
 from entities.bosses.abaddon import Abaddon
 from powers.kits import LightKit, FuryKit, SoulKit
 from powers.skills.light_skills import HolySpear, LuminousPulse
 from powers.skills.fury_skills import Slash, RushHitbox
-from powers.skills.soul_skills import SpectralScythe, SoulBurst, SoulShard
+from powers.skills.soul_skills import SpectralScythe, SoulBurst
 
 class Game:
     def __init__(self):
@@ -15,9 +16,18 @@ class Game:
         pygame.display.set_caption(TITLE)
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = 'START_SCREEN'
+        self.state = 'MAIN_MENU'
         self.font = pygame.font.Font(None, 48)
+        self.small_font = pygame.font.Font(None, 32)
 
+        button_y_start = HEIGHT * 0.4
+        self.main_menu_buttons = [
+            Button(WIDTH/2 - 150, button_y_start, 300, 50, "Iniciar", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
+            Button(WIDTH/2 - 150, button_y_start + 70, 300, 50, "Poderes", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
+            Button(WIDTH/2 - 150, button_y_start + 140, 300, 50, "Chefes", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
+            Button(WIDTH/2 - 150, button_y_start + 210, 300, 50, "Sair", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR)
+        ]
+        
         self.player = None
         self.hud = None
         self.projectiles = None
@@ -36,35 +46,51 @@ class Game:
         self.attack_hitboxes = pygame.sprite.Group()
         self.player_attack_hitboxes = pygame.sprite.Group()
         self.enemy_projectiles = pygame.sprite.Group()
-
         abaddon = Abaddon(self.player, self.attack_hitboxes, self.enemy_projectiles)
         self.enemies.add(abaddon)
 
     def run(self):
         while self.running:
-            if self.state == 'START_SCREEN':
-                self.run_start_screen()
+            if self.state == 'MAIN_MENU':
+                self.run_main_menu()
+            elif self.state == 'KIT_SELECTION':
+                self.run_kit_selection()
+            elif self.state == 'POWERS_SCREEN':
+                self.run_powers_screen()
+            elif self.state == 'BOSSES_SCREEN':
+                self.run_bosses_screen()
             elif self.state == 'PLAYING':
                 self.run_gameplay()
-        
         pygame.quit()
 
-    def run_start_screen(self):
+    def run_main_menu(self):
+        mouse_pos = pygame.mouse.get_pos()
+        self.screen.fill(BLACK)
+        
+        title_surface = self.font.render("Tehom Echoes", True, WHITE)
+        title_rect = title_surface.get_rect(center=(WIDTH / 2, HEIGHT * 0.2))
+        self.screen.blit(title_surface, title_rect)
+
+        for button in self.main_menu_buttons:
+            button.check_for_hover(mouse_pos)
+            button.draw(self.screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            
+            if self.main_menu_buttons[0].is_clicked(event):
+                self.state = 'KIT_SELECTION'
+            if self.main_menu_buttons[1].is_clicked(event):
+                self.state = 'POWERS_SCREEN'
+            if self.main_menu_buttons[2].is_clicked(event):
+                self.state = 'BOSSES_SCREEN'
+            if self.main_menu_buttons[3].is_clicked(event):
+                self.running = False
+        
+        pygame.display.flip()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    self.start_new_game(LightKit)
-                    self.state = 'PLAYING' 
-                if event.key == pygame.K_2:
-                    self.start_new_game(FuryKit)
-                    self.state = 'PLAYING' 
-                if event.key == pygame.K_3:
-                    self.start_new_game(SoulKit)
-                    self.state = 'PLAYING'
-
+    def run_kit_selection(self):
         self.screen.fill(BLACK)
 
         title_surface = self.font.render("Escolha seu Kit Inicial", True, WHITE)
@@ -84,6 +110,64 @@ class Game:
         self.screen.blit(option2_surface, option2_rect)
         self.screen.blit(option3_surface, option3_rect)
 
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    self.start_new_game(LightKit)
+                    self.state = 'PLAYING'
+                if event.key == pygame.K_2:
+                    self.start_new_game(FuryKit)
+                    self.state = 'PLAYING'
+                if event.key == pygame.K_3:
+                    self.start_new_game(SoulKit)
+                    self.state = 'PLAYING'
+
+    def run_powers_screen(self):
+        self.screen.fill(BLACK)
+        
+        def draw_text(text, y_pos, font, color):
+            text_surface = font.render(text, True, color)
+            text_rect = text_surface.get_rect(center=(WIDTH / 2, y_pos))
+            self.screen.blit(text_surface, text_rect)
+
+        draw_text("Descrição dos Poderes", HEIGHT * 0.1, self.font, WHITE)
+        draw_text("[LUZ]: Foco em ataques a distancia e precisao.", HEIGHT * 0.3, self.small_font, YELLOW)
+        draw_text("[FURIA]: Foco em combate corpo a corpo agressivo e combos.", HEIGHT * 0.4, self.small_font, RED)
+        draw_text("[ALMA]: Foco em ataques carregados e sinergia entre habilidades.", HEIGHT * 0.5, self.small_font, BLUE)
+        draw_text("Pressione ESC para voltar", HEIGHT * 0.9, self.small_font, WHITE)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.state = 'MAIN_MENU'
+        
+        pygame.display.flip()
+
+    def run_bosses_screen(self):
+        self.screen.fill(BLACK)
+        
+        def draw_text(text, y_pos, font, color):
+            text_surface = font.render(text, True, color)
+            text_rect = text_surface.get_rect(center=(WIDTH / 2, y_pos))
+            self.screen.blit(text_surface, text_rect)
+            
+        draw_text("Bestiário Infernal", HEIGHT * 0.1, self.font, WHITE)
+        draw_text("Abaddon, o Destruidor: Mestre da forca bruta e ataques em area.", HEIGHT * 0.3, self.small_font, WHITE)
+        draw_text("Pressione ESC para voltar", HEIGHT * 0.9, self.small_font, WHITE)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.state = 'MAIN_MENU'
+        
         pygame.display.flip()
 
     def run_gameplay(self):
@@ -134,15 +218,15 @@ class Game:
                         if hasattr(self.player.kit, 'on_spear_hit'):
                             self.player.kit.on_spear_hit()
                         self.player.gain_health(HEALTH_REGEN_ON_SPEAR_HIT)
+                    elif isinstance(hitbox, SpectralScythe):
+                        enemy.take_damage(SCYTHE_DAMAGE)
+                        if hasattr(self.player.kit, 'on_scythe_hit'):
+                            self.player.kit.on_scythe_hit()
+                        self.player.gain_health(HEALTH_REGEN_ON_SOUL_HIT)
                     elif isinstance(hitbox, SoulBurst):
                         enemy.take_damage(hitbox.damage)
                         healing_amount = hitbox.damage * SOUL_BURST_LIFESTEAL_RATIO
                         self.player.gain_health(healing_amount)
-
-                    elif isinstance(hitbox, SoulShard):
-                        enemy.take_damage(SOUL_SHARD_DAMAGE)
-                        self.player.gain_health(HEALTH_REGEN_ON_SHARD_HIT)
-                        hitbox.kill()
                     
                     hitbox.enemies_hit.append(enemy)
 
