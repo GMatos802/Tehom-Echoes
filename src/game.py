@@ -25,8 +25,9 @@ class Game:
         self.main_menu_buttons = [
             Button(WIDTH/2 - 150, button_y_start, 300, 50, "Iniciar", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
             Button(WIDTH/2 - 150, button_y_start + 70, 300, 50, "Personagens", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
-            Button(WIDTH/2 - 150, button_y_start + 140, 300, 50, "Chefes", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
-            Button(WIDTH/2 - 150, button_y_start + 210, 300, 50, "Sair", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR)
+            Button(WIDTH/2 - 150, button_y_start + 140, 300, 50, "Poderes", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
+            Button(WIDTH/2 - 150, button_y_start + 210, 300, 50, "Chefes", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR),
+            Button(WIDTH/2 - 150, button_y_start + 280, 300, 50, "Sair", self.font, BUTTON_COLOR, BUTTON_HOVER_COLOR)
         ]
         
         self.end_screen_button = Button(
@@ -64,6 +65,8 @@ class Game:
                 self.run_character_selection()
             elif self.state == 'KIT_SELECTION':
                 self.run_kit_selection()
+            elif self.state == 'CHARACTERS_SCREEN':
+                self.run_characters_screen()
             elif self.state == 'POWERS_SCREEN':
                 self.run_powers_screen()
             elif self.state == 'BOSSES_SCREEN':
@@ -95,10 +98,12 @@ class Game:
             if self.main_menu_buttons[0].is_clicked(event):
                 self.state = 'CHARACTER_SELECTION'
             if self.main_menu_buttons[1].is_clicked(event):
-                self.state = 'POWERS_SCREEN'
+                self.state = 'CHARACTERS_SCREEN'
             if self.main_menu_buttons[2].is_clicked(event):
-                self.state = 'BOSSES_SCREEN'
+                self.state = 'POWERS_SCREEN'
             if self.main_menu_buttons[3].is_clicked(event):
+                self.state = 'BOSSES_SCREEN'
+            if self.main_menu_buttons[4].is_clicked(event):
                 self.running = False
         
         pygame.display.flip()
@@ -159,6 +164,29 @@ class Game:
                 if event.key == pygame.K_3:
                     self.start_new_game(SoulKit)
                     self.state = 'PLAYING'
+
+    def run_characters_screen(self):
+        self.screen.fill(BLACK)
+        
+        def draw_text(text, y_pos, font, color):
+            text_surface = font.render(text, True, color)
+            text_rect = text_surface.get_rect(center=(WIDTH / 2, y_pos))
+            self.screen.blit(text_surface, text_rect)
+
+        draw_text("Personagens", HEIGHT * 0.1, self.font, WHITE)
+        draw_text("Caim, o Primeiro Andarilho", HEIGHT * 0.3, self.small_font, WHITE)
+        draw_text("- Passiva: Dano aumenta com base na vida perdida.", HEIGHT * 0.35, self.small_font, (200,200,200))
+        draw_text("- Passiva: Ataques custam vida e reduzem cooldown se bem sucedidos", HEIGHT * 0.4, self.small_font, (200,200,200))
+        draw_text("Pressione ESC para voltar", HEIGHT * 0.9, self.small_font, WHITE)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.state = 'MAIN_MENU'
+        
+        pygame.display.flip()
 
     def run_powers_screen(self):
         self.screen.fill(BLACK)
